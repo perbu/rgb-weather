@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/perbu/rgb-weather/strip"
+	"github.com/perbu/rgb-weather/yr"
 	"os"
 )
 
@@ -15,7 +16,28 @@ func main() {
 }
 
 func run() error {
-	f := strip.GenerateForecast(12, 12)
-	f.Run()
+	// f := strip.GenerateForecast(12, 12)
+	f, err := yr.GetForecast(8)
+	if err != nil {
+		return fmt.Errorf("could not get forecast: %w", err)
+	}
+	strp := f2f(f)
+	strp.Run()
 	return nil
+}
+
+func f2f(yr yr.Forecast) strip.Forecast {
+	f := strip.Forecast{
+		Strip: make([]strip.RGBColor, len(yr.Properties.Timeseries)*10),
+		Ticks: 0,
+	}
+	f.Hours = make([]*strip.Hour, len(yr.Properties.Timeseries))
+	for i, ts := range yr.Properties.Timeseries {
+		h := f.NewHour(i, 10)
+		h.CloudCover = ts.Data.Instant.Details.CloudAreaFraction
+		h.WindSpeed = ts.Data.Instant.Details.WindSpeed
+		h.Precipitation = ts.Data.Next_1_hours.Details.PrecipitationAmount
+		f.Hours[i] = h
+	}
+	return f
 }

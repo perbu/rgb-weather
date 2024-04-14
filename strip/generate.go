@@ -11,8 +11,9 @@ func GenerateForecast(hours, ledsPerHour int) *Forecast {
 	f.Hours = make([]*Hour, hours)
 	for i := range f.Hours {
 		f.Hours[i] = f.NewHour(i, ledsPerHour)
-		f.Hours[i].cloudCover = rand.Float64()
-		f.Hours[i].windSpeed = rand.Float64() * 10
+		f.Hours[i].CloudCover = rand.Float64()
+		f.Hours[i].WindSpeed = rand.Float64() * 10
+		f.Hours[i].Precipitation = rand.Float64() * 4
 	}
 	return f
 }

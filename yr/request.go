@@ -15,7 +15,7 @@ const (
 	lon      = "10.663870"
 )
 
-func GetForecast() (Forecast, error) {
+func GetForecast(max int) (Forecast, error) {
 	req, err := http.NewRequest(http.MethodGet, yrUrl, nil)
 	if err != nil {
 		return Forecast{}, fmt.Errorf("could not create request: %w", err)
@@ -57,5 +57,11 @@ func GetForecast() (Forecast, error) {
 		f.Properties.Timeseries = f.Properties.Timeseries[1:]
 		fmt.Println("chopping off first timeseries")
 	}
+	// Make sure we don't return more than max timeseries
+	if len(f.Properties.Timeseries) > max {
+		f.Properties.Timeseries = f.Properties.Timeseries[:max]
+		fmt.Println("chopping off last timeseries")
+	}
+
 	return f, nil
 }
