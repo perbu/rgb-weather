@@ -35,6 +35,7 @@ func f2f(yr yr.Forecast) strip.Forecast {
 	for i, ts := range yr.Properties.Timeseries {
 		h := f.NewHour(i, 10)
 		h.CloudCover = ts.Data.Instant.Details.CloudAreaFraction
+		fmt.Println("CloudCover:", h.CloudCover)
 		h.WindSpeed = ts.Data.Instant.Details.WindSpeed
 		h.Precipitation = ts.Data.Next_1_hours.Details.PrecipitationAmount
 		f.Hours[i] = h

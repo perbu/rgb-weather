@@ -1,6 +1,7 @@
 package strip
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -13,13 +14,13 @@ type Hour struct {
 	CloudCover     float64
 	WindSpeed      float64
 	leds           []Color
-	noise          []Color
 	rainDrops      []bool
 }
 
 func (f *Forecast) NewHour(offset, leds int) *Hour {
-	const noiseAmplitude = 25
-	noise := make([]Color, leds)
+	const noiseAmplitude = 0
+	/*noise := make([]Color, leds)
+
 	for i := range noise {
 		noise[i] = Color{
 			R: int16(rand.Intn(noiseAmplitude*2) - noiseAmplitude),
@@ -27,10 +28,11 @@ func (f *Forecast) NewHour(offset, leds int) *Hour {
 			B: int16(rand.Intn(noiseAmplitude*2) - noiseAmplitude),
 		}
 	}
+	*/
 	return &Hour{
-		Forecast:  f,
-		leds:      make([]Color, leds),
-		noise:     noise,
+		Forecast: f,
+		leds:     make([]Color, leds),
+		//noise:     noise,
 		start:     offset * leds,
 		rainDrops: make([]bool, leds),
 	}
@@ -40,7 +42,7 @@ func (h *Hour) Update() {
 	const rainUpdateInterval = 200
 	// cloud cover:
 	for i := 0; i < len(h.leds); i++ {
-		h.leds[i] = CloudCoverToColor(h.CloudCover)
+		h.leds[i] = CloudCoverToColor(h.CloudCover / 100)
 	}
 	rotationSpeed := windToRotation(h.WindSpeed)
 	if rotationSpeed > 0 {
@@ -52,7 +54,8 @@ func (h *Hour) Update() {
 
 	// Apply the noise and make a copy of the leds
 	for i := 0; i < len(ledsCopy); i++ {
-		ledsCopy[i] = applyNoise(h.leds[i], h.noise[i])
+		// ledsCopy[i] = applyNoise(h.leds[i], h.noise[i])
+		ledsCopy[i] = h.leds[i]
 	}
 	// raindrops:
 	rainFactor := RainFactor(h.Precipitation)
@@ -67,7 +70,7 @@ func (h *Hour) Update() {
 			ledsCopy[i] = Color{R: 0, G: 0, B: 255}
 		}
 	}
-
+	ledsCopy[0] = Color{R: 0, G: 0, B: 0}
 	// rotate the leds in the copy:
 	ledsCopy = rotate(ledsCopy, h.rotationOffset)
 
@@ -103,17 +106,34 @@ func applyNoise(c Color, noise Color) Color {
 // CloudCoverToColor converts a cloud cover value (0-1) to an RGB color.
 // It is yellow when the cloud cover is 0, and white when the cloud cover is 1.
 // noise is added to the color to make it more interesting and to let the rotation be more visible.
-func CloudCoverToColor(cover float64) Color {
-	r := int16(255 * cover)
-	g := int16(255 * cover)
-	b := int16(0)
-	return Color{R: r, G: g, B: b}
+// getColorFromValue returns the RGB values based on the input value
+func CloudCoverToColor(value float64) Color {
+	if value < 0.0 || value > 1.0 {
+		fmt.Println("Value should be between 0.0 and 1.0, was: ", value)
+		return Color{}
+	}
+
+	// Define start and end colors
+	rStart, gStart, bStart := uint8(255), uint8(255), uint8(0) // Bright yellow
+	rEnd, gEnd, bEnd := uint8(32), uint8(32), uint8(32)        // Dark gray
+
+	// Interpolate each color channel
+	r := interpolate(rStart, rEnd, value)
+	g := interpolate(gStart, gEnd, value)
+	b := interpolate(bStart, bEnd, value)
+
+	return Color{R: int16(r), G: int16(g), B: int16(b)}
+}
+
+// interpolate calculates the linear interpolation for a single channel
+func interpolate(start, end uint8, value float64) uint8 {
+	return uint8(float64(start) + (float64(end)-float64(start))*value)
 }
 
 // RainFactor returns a factor between 0 and X that represents the amount of rain.
 // X is the maximum amount of rain that can be displayed, might be 0.75 for example.
 func RainFactor(rain float64) float64 {
-	const maxRain = 0.75
+	const maxRain = 0.80
 	if rain > 5 {
 		return maxRain
 	}
