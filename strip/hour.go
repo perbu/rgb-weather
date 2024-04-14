@@ -18,7 +18,7 @@ type Hour struct {
 }
 
 func (f *Forecast) NewHour(offset, leds int) *Hour {
-	const noiseAmplitude = 5
+	const noiseAmplitude = 25
 	noise := make([]Color, leds)
 	for i := range noise {
 		noise[i] = Color{
@@ -47,9 +47,10 @@ func (h *Hour) Update() {
 		}
 	}
 	ledsCopy := make([]Color, len(h.leds))
-	copy(ledsCopy, h.leds)
+
+	// Apply the noise and make a copy of the leds
 	for i := 0; i < len(ledsCopy); i++ {
-		ledsCopy[i] = applyNoise(ledsCopy[i], h.noise[i])
+		ledsCopy[i] = applyNoise(h.leds[i], h.noise[i])
 	}
 
 	// rotate the leds in the copy:
@@ -78,9 +79,9 @@ func rotate[T any](slice []T, n int) []T {
 }
 
 func applyNoise(c Color, noise Color) Color {
-	c.R = +noise.R
-	c.G = +noise.G
-	c.B = +noise.B
+	c.R += noise.R
+	c.G += noise.G
+	c.B += noise.B
 	return c
 }
 
@@ -90,6 +91,6 @@ func applyNoise(c Color, noise Color) Color {
 func (h *Hour) CloudCoverToColor(cover float64) Color {
 	r := int16(255 * cover)
 	g := int16(255 * cover)
-	b := int16(255)
+	b := int16(0)
 	return Color{R: r, G: g, B: b}
 }
