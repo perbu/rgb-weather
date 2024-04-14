@@ -1,0 +1,6 @@
+github.com/tinygo-org/net v0.0.0-20240413103335-d9132d2a5211 h1:vqh+Cij+/wiZVgvrGYAThBRjULY8dZYRemNA+jdPLHo=
+github.com/tinygo-org/net v0.0.0-20240413103335-d9132d2a5211/go.mod h1:pKTRcTiZNsvMl6i9WCfaImKGx2GZntIHBH1yvFaVjps=
+golang.org/x/net v0.24.0 h1:1PcaxkF854Fu3+lvBIx5SYn9wRlBzzcnHZSiaFFAb0w=
+golang.org/x/net v0.24.0/go.mod h1:2Q7sJY5mzlzWjKtYUEXSlBWCdyaioyXzRB2RtU8KVE8=
+golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=

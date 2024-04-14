@@ -3,7 +3,6 @@ package yr
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
@@ -16,51 +15,42 @@ const (
 )
 
 func GetForecast(max int) (Forecast, error) {
-	req, err := http.NewRequest(http.MethodGet, yrUrl, nil)
+	var f Forecast
+
+	// Construct the URL with query parameters
+	url := fmt.Sprintf("%s?altitude=%s&lat=%s&lon=%s", yrUrl, altitude, lat, lon)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return Forecast{}, fmt.Errorf("could not create request: %w", err)
 	}
-
-	q := req.URL.Query()
-	q.Add("altitude", altitude)
-	q.Add("lat", lat)
-	q.Add("lon", lon)
-	req.URL.RawQuery = q.Encode()
 	req.Header.Add("User-Agent", "perbu/yr")
 	req.Header.Add("Accept", "application/json")
-	client := http.Client{}
-	resp, err := client.Do(req)
+	// Perform the HTTP GET request
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return Forecast{}, fmt.Errorf("could not send request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	// Check HTTP response status
 	if resp.StatusCode != http.StatusOK {
 		return Forecast{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	// parse response into Forecast struct:
-	var f Forecast
-	bytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return Forecast{}, fmt.Errorf("could not read response: %w", err)
-	}
-	// os.WriteFile("response.json", bytes, 0644)
 
-	err = json.Unmarshal(bytes, &f)
+	// Read and parse the JSON response
+	err = json.NewDecoder(resp.Body).Decode(&f)
 	if err != nil {
 		return Forecast{}, fmt.Errorf("could not parse response: %w", err)
 	}
 
-	// Remove timeseries in the future
-	for f.Properties.Timeseries[0].Time.After(time.Now().Add(time.Hour)) {
-		// Chop off the first timeseries if it is in the future
-		f.Properties.Timeseries = f.Properties.Timeseries[1:]
-		fmt.Println("chopping off first timeseries")
+	// Truncate timeseries data as required
+	now := time.Now()
+	i := 0
+	for ; i < len(f.Properties.Timeseries) && !f.Properties.Timeseries[i].Time.Before(now); i++ {
 	}
-	// Make sure we don't return more than max timeseries
+	f.Properties.Timeseries = f.Properties.Timeseries[i:]
 	if len(f.Properties.Timeseries) > max {
 		f.Properties.Timeseries = f.Properties.Timeseries[:max]
-		fmt.Println("chopping off last timeseries")
 	}
 
 	return f, nil

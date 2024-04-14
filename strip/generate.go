@@ -1,6 +1,6 @@
 package strip
 
-import "math/rand/v2"
+import "math/rand"
 
 func GenerateForecast(hours, ledsPerHour int) *Forecast {
 	leds := hours * ledsPerHour

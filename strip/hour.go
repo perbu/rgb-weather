@@ -39,7 +39,6 @@ func (h *Hour) Update(ticks int) {
 	if rotationSpeed > 0 {
 		rotationOffset = int(float64(ticks)/float64(rotationSpeed)) % h.len
 	}
-	fmt.Println("rotationOffset:", rotationOffset, "rotationSpeed:", rotationSpeed)
 	// raindrops:
 	rainFactor := RainFactor(h.Precipitation)
 	if ticks%rainUpdateInterval == 0 {
@@ -91,8 +90,7 @@ func applyNoise(c Color, noise Color) Color {
 // getColorFromValue returns the RGB values based on the input value
 func CloudCoverToColor(value float64) Color {
 	if value < 0.0 || value > 1.0 {
-		fmt.Println("Value should be between 0.0 and 1.0, was: ", value)
-		return Color{}
+		panic(fmt.Sprintf("Value should be between 0.0 and 1.0, was: %f", value))
 	}
 
 	// Define start and end colors
