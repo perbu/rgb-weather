@@ -6,7 +6,6 @@ func GenerateForecast(hours, ledsPerHour int) *Forecast {
 	leds := hours * ledsPerHour
 	f := &Forecast{
 		Strip: make([]RGBColor, leds),
-		Ticks: 0,
 	}
 	f.Hours = make([]*Hour, hours)
 	for i := range f.Hours {

@@ -7,77 +7,59 @@ import (
 
 // Hour represents a single hours of weather data.
 type Hour struct {
-	Forecast       *Forecast
-	start          int
-	rotationOffset int
-	Precipitation  float64
-	CloudCover     float64
-	WindSpeed      float64
-	leds           []Color
-	rainDrops      []bool
+	len           int
+	start         int
+	Precipitation float64
+	CloudCover    float64
+	WindSpeed     float64
+	rainDrops     []bool
+	forecast      *Forecast
 }
 
 func (f *Forecast) NewHour(offset, leds int) *Hour {
-	const noiseAmplitude = 0
-	/*noise := make([]Color, leds)
-
-	for i := range noise {
-		noise[i] = Color{
-			R: int16(rand.Intn(noiseAmplitude*2) - noiseAmplitude),
-			G: int16(rand.Intn(noiseAmplitude*2) - noiseAmplitude),
-			B: int16(rand.Intn(noiseAmplitude*2) - noiseAmplitude),
-		}
-	}
-	*/
 	return &Hour{
-		Forecast: f,
-		leds:     make([]Color, leds),
+		len: leds,
 		//noise:     noise,
 		start:     offset * leds,
 		rainDrops: make([]bool, leds),
+		forecast:  f,
 	}
 }
 
-func (h *Hour) Update() {
-	const rainUpdateInterval = 200
+func (h *Hour) Update(ticks int) {
+	const rainUpdateInterval = 200 // update raindrops every 200 ticks
 	// cloud cover:
-	for i := 0; i < len(h.leds); i++ {
-		h.leds[i] = CloudCoverToColor(h.CloudCover / 100)
+	leds := make([]Color, h.len)
+	// skip the first led to make the rotation more visible
+	for i := 1; i < h.len; i++ {
+		leds[i] = CloudCoverToColor(h.CloudCover / 100)
 	}
-	rotationSpeed := windToRotation(h.WindSpeed)
+	rotationSpeed := windToRotation(h.WindSpeed) // the higher the speed the slower the rotation.
+	var rotationOffset int
 	if rotationSpeed > 0 {
-		if h.Forecast.Ticks%rotationSpeed == 0 {
-			h.rotationOffset = (h.rotationOffset + 1) % len(h.leds)
-		}
+		rotationOffset = int(float64(ticks) / float64(rotationSpeed))
 	}
-	ledsCopy := make([]Color, len(h.leds))
-
-	// Apply the noise and make a copy of the leds
-	for i := 0; i < len(ledsCopy); i++ {
-		// ledsCopy[i] = applyNoise(h.leds[i], h.noise[i])
-		ledsCopy[i] = h.leds[i]
-	}
+	fmt.Println("rotationOffset:", rotationOffset, "rotationSpeed:", rotationSpeed)
 	// raindrops:
 	rainFactor := RainFactor(h.Precipitation)
-	if h.Forecast.Ticks%rainUpdateInterval == 0 {
+	if ticks%rainUpdateInterval == 0 {
 		for i := 0; i < len(h.rainDrops); i++ {
 			h.rainDrops[i] = rand.Float64() < rainFactor
 		}
 	}
 	// overwrite the leds with raindrops where needed:
-	for i := 0; i < len(h.leds); i++ {
+	for i := 0; i < h.len; i++ {
 		if h.rainDrops[i] {
-			ledsCopy[i] = Color{R: 0, G: 0, B: 255}
+			leds[i] = Color{R: 0, G: 0, B: 255}
 		}
 	}
-	ledsCopy[0] = Color{R: 0, G: 0, B: 0}
-	// rotate the leds in the copy:
-	ledsCopy = rotate(ledsCopy, h.rotationOffset)
+	// ledsCopy[0] = Color{R: 0, G: 0, B: 0}
+	leds = rotate(leds, rotationOffset)
 
 	// draw the colors onto the strip
-	for i := 0; i < len(h.leds); i++ {
+	for i := 0; i < h.len; i++ {
 		target := h.start + i
-		h.Forecast.Strip[target] = Color2RGB(ledsCopy[i])
+		h.forecast.Strip[target] = Color2RGB(leds[i])
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 
 const (
 	hoursInForecast = 12
-	frameRate       = 30
+	frameRate       = 10
 	ledsPerHour     = 10
 )
 
@@ -30,8 +30,9 @@ func New(leds int) *Forecast {
 }
 
 func (f *Forecast) Update() {
+	f.Ticks++
 	for _, hour := range f.Hours {
-		hour.Update()
+		hour.Update(f.Ticks)
 	}
 }
 
