@@ -7,7 +7,7 @@ import (
 
 const (
 	hoursInForecast = 12
-	frameRate       = 10
+	frameRate       = 30
 	ledsPerHour     = 10
 )
 

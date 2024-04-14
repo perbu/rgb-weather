@@ -37,7 +37,7 @@ func (h *Hour) Update(ticks int) {
 	rotationSpeed := windToRotation(h.WindSpeed) // the higher the speed the slower the rotation.
 	var rotationOffset int
 	if rotationSpeed > 0 {
-		rotationOffset = int(float64(ticks) / float64(rotationSpeed))
+		rotationOffset = int(float64(ticks)/float64(rotationSpeed)) % h.len
 	}
 	fmt.Println("rotationOffset:", rotationOffset, "rotationSpeed:", rotationSpeed)
 	// raindrops:
