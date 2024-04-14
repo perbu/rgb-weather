@@ -5,6 +5,7 @@ import (
 	"github.com/perbu/rgb-weather/strip"
 	"github.com/perbu/rgb-weather/yr"
 	"os"
+	"time"
 )
 
 func main() {
@@ -17,12 +18,15 @@ func main() {
 
 func run() error {
 	// f := strip.GenerateForecast(12, 12)
-	f, err := yr.GetForecast(8)
-	if err != nil {
-		return fmt.Errorf("could not get forecast: %w", err)
+	for {
+		f, err := yr.GetForecast(8)
+		invalidate := time.Now().Add(1 * time.Hour)
+		if err != nil {
+			return fmt.Errorf("could not get forecast: %w", err)
+		}
+		strp := f2f(f)
+		strp.Run(invalidate)
 	}
-	strp := f2f(f)
-	strp.Run()
 	return nil
 }
 

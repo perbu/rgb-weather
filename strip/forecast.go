@@ -46,12 +46,15 @@ func (f *Forecast) Display() {
 	fmt.Println()
 }
 
-func (f *Forecast) Run() {
+func (f *Forecast) Run(until time.Time) {
 	// create a ticker that ticks every 1/frameRate seconds
 	ticker := time.NewTicker(time.Second / frameRate)
 	defer ticker.Stop()
+	timeout := time.NewTimer(until.Sub(time.Now()))
 	for {
 		select {
+		case <-timeout.C:
+			return
 		case <-ticker.C:
 			f.Update()
 			f.Ticks++
