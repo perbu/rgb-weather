@@ -1,7 +1,7 @@
 package strip
 
 import (
-	"fmt"
+	"math"
 	"math/rand"
 )
 
@@ -9,9 +9,9 @@ import (
 type Hour struct {
 	len           int
 	start         int
-	Precipitation float64
-	CloudCover    float64
-	WindSpeed     float64
+	Precipitation float32
+	CloudCover    float32
+	WindSpeed     float32
 	rainDrops     []bool
 	forecast      *Forecast
 }
@@ -37,13 +37,13 @@ func (h *Hour) Update(ticks int) {
 	rotationSpeed := windToRotation(h.WindSpeed) // the higher the speed the slower the rotation.
 	var rotationOffset int
 	if rotationSpeed > 0 {
-		rotationOffset = int(float64(ticks)/float64(rotationSpeed)) % h.len
+		rotationOffset = int(float32(ticks)/float32(rotationSpeed)) % h.len
 	}
 	// raindrops:
 	rainFactor := RainFactor(h.Precipitation)
 	if ticks%rainUpdateInterval == 0 {
 		for i := 0; i < len(h.rainDrops); i++ {
-			h.rainDrops[i] = rand.Float64() < rainFactor
+			h.rainDrops[i] = rand.Float32() < rainFactor
 		}
 	}
 	// overwrite the leds with raindrops where needed:
@@ -88,31 +88,45 @@ func applyNoise(c Color, noise Color) Color {
 // It is yellow when the cloud cover is 0, and white when the cloud cover is 1.
 // noise is added to the color to make it more interesting and to let the rotation be more visible.
 // getColorFromValue returns the RGB values based on the input value
-func CloudCoverToColor(value float64) Color {
+func CloudCoverToColor(value float32) Color {
 	if value < 0.0 || value > 1.0 {
-		panic(fmt.Sprintf("Value should be between 0.0 and 1.0, was: %f", value))
+		panic("value must be between 0 and 1")
 	}
 
-	// Define start and end colors
-	rStart, gStart, bStart := uint8(255), uint8(255), uint8(0) // Bright yellow
-	rEnd, gEnd, bEnd := uint8(32), uint8(32), uint8(32)        // Dark gray
-
 	// Interpolate each color channel
-	r := interpolate(rStart, rEnd, value)
-	g := interpolate(gStart, gEnd, value)
-	b := interpolate(bStart, bEnd, value)
+	r := 255
+	g := 255
+	b := interpolate2(value)
 
 	return Color{R: int16(r), G: int16(g), B: int16(b)}
 }
 
 // interpolate calculates the linear interpolation for a single channel
-func interpolate(start, end uint8, value float64) uint8 {
-	return uint8(float64(start) + (float64(end)-float64(start))*value)
+func interpolate(start, end uint8, value float32) uint8 {
+	return uint8(float32(start) + (float32(end)-float32(start))*value)
+}
+
+func interpolate1(value float32) uint8 {
+	if value < 0 {
+		return 0
+	} else if value > 1 {
+		return 255
+	}
+	return uint8(value * 255)
+}
+
+func interpolate2(value float32) uint8 {
+	if value < 0 {
+		return 0
+	} else if value > 1 {
+		return 255
+	}
+	return uint8(math.Pow(float64(value), 2) * 255)
 }
 
 // RainFactor returns a factor between 0 and X that represents the amount of rain.
 // X is the maximum amount of rain that can be displayed, might be 0.75 for example.
-func RainFactor(rain float64) float64 {
+func RainFactor(rain float32) float32 {
 	const maxRain = 0.80
 	if rain > 5 {
 		return maxRain

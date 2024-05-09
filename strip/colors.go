@@ -1,7 +1,15 @@
 package strip
 
+import (
+	"github.com/perbu/bobblehat/sense/screen/color"
+)
+
 type RGBColor struct {
 	R, G, B uint8
+}
+
+func (rgb RGBColor) PiColor() color.Color {
+	return color.New(rgb.R, rgb.G, rgb.B)
 }
 
 // LED represents an RGB color where R, G, and B are the red, green, and blue values respectively.
@@ -36,7 +44,7 @@ func to8(c int16) uint8 {
 // If a tiny bit of wind, rotation is 10, which means the colors are shifted every 10 tick.
 // If a lot of wind, rotation is 3, which means the colors are shifted every 3 ticks.
 // It maxes out at 1, which means the colors are shifted every tick.
-func windToRotation(speed float64) int {
+func windToRotation(speed float32) int {
 	if speed >= 8.5 {
 		return 1
 	}

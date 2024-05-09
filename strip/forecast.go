@@ -2,26 +2,32 @@ package strip
 
 import (
 	"fmt"
+	"github.com/perbu/bobblehat/sense/screen"
 	"time"
 )
 
 const (
-	hoursInForecast = 12
+	hoursInForecast = 8
 	frameRate       = 30
-	ledsPerHour     = 10
+	ledsPerHour     = 8
 )
 
 type Forecast struct {
 	Hours []*Hour
 	Strip []RGBColor
 	Ticks int
+	FB    *screen.FrameBuffer
+	Dev   screen.Device
 }
 
+// not in use atm, see f2f in main.
 func New(leds int) *Forecast {
 	f := &Forecast{
 		Strip: make([]RGBColor, leds),
 		Ticks: 0,
+		FB:    screen.NewFrameBuffer(),
 	}
+	fmt.Printf("FrameBuffer created. Bounds: %v\n", f.FB.Bounds())
 	f.Hours = make([]*Hour, hoursInForecast)
 	for i := range f.Hours {
 		f.Hours[i] = f.NewHour(leds, ledsPerHour)
@@ -37,21 +43,24 @@ func (f *Forecast) Update() {
 }
 
 func (f *Forecast) Display() {
-	// Move cursor to 1,1:
-	fmt.Print("\x1b[H")
-	fmt.Print("\r") // Move cursor to the beginning of the line
-	for _, led := range f.Strip {
-		fmt.Printf("\x1b[48;2;%d;%d;%dm \x1b[0m", led.R, led.G, led.B)
+	for hour := 0; hour < 8; hour++ {
+		for led := 0; led < 8; led++ {
+			f.FB.SetPixel(led, hour, f.Strip[hour*8+led].PiColor())
+		}
 	}
-	fmt.Print("\x1b[0K") // Clear from cursor to the end of the line
-	fmt.Println()
+	err := f.Dev.Draw(f.FB)
+	if err != nil {
+		fmt.Printf("Error drawing to device: %v\n", err)
+	}
+
 }
 
 func (f *Forecast) Run(until time.Time) {
 	// create a ticker that ticks every 1/frameRate seconds
 	ticker := time.NewTicker(time.Second / frameRate)
+	fmt.Printf("Ticker running at %v\n", time.Second/frameRate)
 	defer ticker.Stop()
-	timeout := time.NewTimer(until.Sub(time.Now()))
+	timeout := time.NewTimer(time.Until(until))
 	for {
 		select {
 		case <-timeout.C:
@@ -61,7 +70,6 @@ func (f *Forecast) Run(until time.Time) {
 			f.Ticks++
 			f.Display()
 		}
-
 	}
-
+	_ = f.Dev.Clear()
 }

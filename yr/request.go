@@ -46,11 +46,11 @@ func GetForecast(max int) (Forecast, error) {
 	// Truncate timeseries data as required
 	now := time.Now()
 	i := 0
-	for ; i < len(f.Properties.Timeseries) && !f.Properties.Timeseries[i].Time.Before(now); i++ {
+	for ; i < len(f.Properties.TimeSeries) && !f.Properties.TimeSeries[i].Time.Before(now); i++ {
 	}
-	f.Properties.Timeseries = f.Properties.Timeseries[i:]
-	if len(f.Properties.Timeseries) > max {
-		f.Properties.Timeseries = f.Properties.Timeseries[:max]
+	f.Properties.TimeSeries = f.Properties.TimeSeries[i:]
+	if len(f.Properties.TimeSeries) > max {
+		f.Properties.TimeSeries = f.Properties.TimeSeries[:max]
 	}
 
 	return f, nil
